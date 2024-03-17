@@ -11,10 +11,9 @@ const portNumber = ":8080"
 func main() {
 	http.HandleFunc("/habits", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Println(r.URL)
-		fmt.Fprintf(w, "Hello World")
+		fmt.Fprintf(w, "Hit the habits endpoint")
 	})
 	//TODO How can I add another route like GET /habits and POST /habits
-	
 
 	err := http.ListenAndServe(portNumber, nil)
 	if err != nil {
