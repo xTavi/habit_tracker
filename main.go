@@ -36,14 +36,13 @@ type HttpResponseError struct {
 	ErrorMessage string `json:"errorMessage"`
 }
 
-func main() {
+var habitsDatabase = make([]Habit, 0)
+var habitRecordDatabase = make([]HabitRecord, 0)
 
+func main() {
 	http.HandleFunc("POST /habits", handleHabitCreation)
 	http.HandleFunc("POST /habits/{id}/track", handleHabitRecordCreation)
-	http.HandleFunc("GET /habits", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Println("%s %s", r.Method, r.URL)
-		fmt.Fprintf(w, "Hit the habits endpoint")
-	})
+	http.HandleFunc("GET /habits", handleGetHabits)
 
 	err := http.ListenAndServe(portNumber, nil)
 	if err != nil {
@@ -88,8 +87,22 @@ func handleHabitCreation(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusCreated)
 		w.Write(data)
 		r.Body.Close()
+		habitsDatabase = append(habitsDatabase, habit)
 	}
 
+}
+
+func handleGetHabits(w http.ResponseWriter, r *http.Request) {
+	printRequestInfo(*r)
+	w.Header().Set("Content-Type", "application/json")
+	habits, err := json.Marshal(habitsDatabase)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write(habits)
 }
 
 func handleHabitRecordCreation(w http.ResponseWriter, r *http.Request) {
