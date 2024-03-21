@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"slices"
 	"time"
 
 	"github.com/beevik/guid"
@@ -122,6 +123,23 @@ func handleHabitRecordCreation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	isHabitExistent := slices.ContainsFunc(habitsDatabase, func(habit Habit) bool {
+		return habit.ID == incomingId
+	})
+
+	if !isHabitExistent {
+		message, err := json.Marshal(HttpResponseError{ErrorMessage: "Habit not found"})
+
+		if err != nil {
+			log.Default().Printf("Error marshalling response: %v", err)
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		http.Error(w, string(message[:]), http.StatusBadRequest)
+		return
+	}
+
 	var habitRecord HabitRecord
 	err := json.NewDecoder(r.Body).Decode(&habitRecord)
 
@@ -145,6 +163,9 @@ func handleHabitRecordCreation(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 
+	// Maybe it s a good idea to track the habit once a day
+
+	habitRecordDatabase = append(habitRecordDatabase, habitRecord)
 	w.WriteHeader(http.StatusCreated)
 	w.Write([]byte(createdHabitRecord))
 }
