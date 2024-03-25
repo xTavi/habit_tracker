@@ -140,6 +140,25 @@ func handleHabitRecordCreation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	todayDate := time.Now()
+	fmt.Println(todayDate, todayDate.Day())
+	isHabitRecordedTodayAlready := slices.ContainsFunc(habitRecordDatabase, func(habitRecord HabitRecord) bool {
+		return habitRecord.HabitId == incomingId && habitRecord.Date.Day() == todayDate.Day() && habitRecord.Date.Month() == todayDate.Month() && habitRecord.Date.Year() == todayDate.Year()
+	})
+
+	if isHabitRecordedTodayAlready {
+		message, err := json.Marshal(HttpResponseError{ErrorMessage: "Habit already recorded today"})
+
+		if err != nil {
+			log.Default().Printf("Error marshalling response: %v", err)
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		http.Error(w, string(message[:]), http.StatusBadRequest)
+		return
+	}
+
 	var habitRecord HabitRecord
 	err := json.NewDecoder(r.Body).Decode(&habitRecord)
 
@@ -162,8 +181,6 @@ func handleHabitRecordCreation(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
-
-	// Maybe it s a good idea to track the habit once a day
 
 	habitRecordDatabase = append(habitRecordDatabase, habitRecord)
 	w.WriteHeader(http.StatusCreated)
