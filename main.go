@@ -85,10 +85,16 @@ func handleHabitCreation(w http.ResponseWriter, r *http.Request) {
 	if data, err := json.Marshal(habit); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	} else {
+		err2 := insertNewHabitIntoDb(habit)
+		if err2 != nil {
+			fmt.Println(err2)
+			fmt.Println("Failed to create habit")
+		}
+
 		w.WriteHeader(http.StatusCreated)
 		w.Write(data)
 		r.Body.Close()
-		habitsDatabase = append(habitsDatabase, habit)
+
 	}
 
 }
@@ -96,7 +102,7 @@ func handleHabitCreation(w http.ResponseWriter, r *http.Request) {
 func handleGetHabits(w http.ResponseWriter, r *http.Request) {
 	printRequestInfo(*r)
 	w.Header().Set("Content-Type", "application/json")
-	habits, err := json.Marshal(habitsDatabase)
+	habits, err := json.Marshal(getAllHabits())
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
